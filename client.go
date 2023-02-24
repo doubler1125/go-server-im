@@ -74,7 +74,7 @@ func (client *Client) run() {
 
 		switch client.flag {
 		case 1:
-			fmt.Println("选择公聊模式")
+			client.PublicChat()
 			break
 		case 2:
 			fmt.Println("选择私聊模式")
@@ -130,4 +130,27 @@ func (client *Client) DealResponse() {
 	// 	client.conn.Read(buf)
 	// 	fmt.Println(buf)
 	// }
+}
+
+func (client *Client) PublicChat() {
+	var chatMsg string
+
+	fmt.Println(">>>>>请输入聊天内容,输入exit退出")
+	fmt.Scanln(&chatMsg)
+
+	for chatMsg != "exit" {
+		// 发送给服务端
+		if len(chatMsg) != 0 {
+			msg := chatMsg + "\n"
+			_, err := client.conn.Write([]byte(msg))
+			if err != nil {
+				fmt.Println("client.conn.write err:", err)
+				break
+			}
+		}
+
+		chatMsg = ""
+		fmt.Println("请输入聊天内容,输入exit退出")
+		fmt.Scanln(&chatMsg)
+	}
 }
