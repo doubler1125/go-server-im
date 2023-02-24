@@ -3,14 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type Client struct {
 	ServerIp   string
 	ServerPort int
 	Name       string
-	Conn       net.Conn
+	conn       net.Conn
 	flag       int // 客户端模式
 }
 
@@ -30,47 +32,8 @@ func NewClient(ip string, port int) *Client {
 		return nil
 	}
 
-	client.Conn = conn
+	client.conn = conn
 	return client
-}
-
-func (this *Client) menu() bool {
-	var flag int
-
-	fmt.Sprintln("1.公聊模式")
-	fmt.Sprintln("2.私聊模式")
-	fmt.Sprintln("3.更新用户名")
-	fmt.Sprintln("0.退出")
-
-	fmt.Scanln(&flag)
-
-	if flag >= 0 && flag <= 3 {
-		this.flag = flag
-		return true
-	} else {
-		fmt.Println("请输入合法范围内的数字")
-		return false
-	}
-}
-
-func (client *Client) run() {
-	for client.flag != 0 {
-		// 直到选一个模式为止
-		for client.menu() != true {
-		}
-
-		switch client.flag {
-		case 1:
-			fmt.Println("选择公聊模式")
-			break
-		case 2:
-			fmt.Println("选择私聊模式")
-			break
-		case 3:
-			fmt.Println("更新用户名")
-			break
-		}
-	}
 }
 
 var serverIP string
@@ -96,6 +59,75 @@ func main() {
 
 	fmt.Println(">>>>链接服务器成功")
 
+	// 单独开启一个goroutine去处理server的回执消息
+	go client.DealResponse()
+
 	// 启动客户端的业务
 	client.run()
+}
+
+func (client *Client) run() {
+	for client.flag != 0 {
+		// 直到选一个模式为止
+		for client.menu() != true {
+		}
+
+		switch client.flag {
+		case 1:
+			fmt.Println("选择公聊模式")
+			break
+		case 2:
+			fmt.Println("选择私聊模式")
+			break
+		case 3:
+			client.updateName()
+			break
+		}
+	}
+}
+
+func (this *Client) menu() bool {
+	var flag int
+
+	fmt.Sprintln("1.公聊模式")
+	fmt.Sprintln("2.私聊模式")
+	fmt.Sprintln("3.更新用户名")
+	fmt.Sprintln("0.退出")
+
+	fmt.Scanln(&flag)
+
+	if flag >= 0 && flag <= 3 {
+		this.flag = flag
+		return true
+	} else {
+		fmt.Println("请输入合法范围内的数字")
+		return false
+	}
+}
+
+func (client *Client) updateName() bool {
+
+	fmt.Println("请输入用户名")
+	fmt.Scanln(&client.Name)
+
+	sendMsg := "rename|" + client.Name + "\n"
+	_, err := client.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("client.conn.write err:", err)
+		return false
+	}
+	return true
+}
+
+// 处理server返回的消息，直接显示到标准输出即可
+func (client *Client) DealResponse() {
+
+	// 一旦client.conn有数据，直接拷贝到stdout标准输出上，永久阻塞监听
+	io.Copy(os.Stdout, client.conn)
+	// 相当于下面的写法
+	// for {
+	// 	buf := make([]byte, 4096)
+	// 	client.conn.Read(buf)
+	// 	fmt.Println(buf)
+	// }
 }
