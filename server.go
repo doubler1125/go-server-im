@@ -92,7 +92,7 @@ func (this *Server) Handler(conn net.Conn) {
 		select {
 		case <-isActive:
 			// 当前用户是活跃的，应该重置定时器；不做任何处理，为了激活select更新下面这个定时器
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 300):
 			user.SendMsg("你被踢了")
 
 			// 销毁资源
