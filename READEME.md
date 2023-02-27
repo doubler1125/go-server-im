@@ -11,3 +11,15 @@
 ### 客户端实现
 ### 客户端模式选择
 ### 客户端更新用户名
+### 公聊模式
+### 私聊模式
+
+```
+server:
+go build -o server main.go server.go user.go
+./server
+
+client:
+go build -o client client.go
+./client
+```
